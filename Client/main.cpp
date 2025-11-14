@@ -75,28 +75,40 @@ int main()
 	}
 
 	//5) Отправляем данные на сервер 
+	
 	CHAR send_buffer[BUFFER_LENGHT] = "Hello Server, I am client";
-	iResult = send(connect_scoket, send_buffer, strlen(send_buffer), 0);
-	if (iResult == SOCKET_ERROR)
+	do 
 	{
-		dwLastError = WSAGetLastError();
-		cout << "Send failed with error: " << dwLastError;
-		closesocket(connect_scoket);
-		freeaddrinfo(result);
-		WSACleanup();
-		return dwLastError;
-	}
-	cout << iResult << "Bytes sent" << endl;
+		iResult = send(connect_scoket, send_buffer, strlen(send_buffer), 0);
+		if (iResult == SOCKET_ERROR)
+		{
+			dwLastError = WSAGetLastError();
+			cout << "Send failed with error: " << dwLastError;
+			closesocket(connect_scoket);
+			freeaddrinfo(result);
+			WSACleanup();
+			return dwLastError;
+		}
+		cout << iResult << "Bytes sent" << endl;
 
-	//6) Ожидаем ответ от сервера 
-	CHAR recv_buffer[BUFFER_LENGHT] = {};
-	do
-	{
-		iResult = recv(connect_scoket, recv_buffer, BUFFER_LENGHT, 0);
-		if (iResult > 0)cout << iResult << "Bytes recived, Message:\t" << recv_buffer << ".\n";
-		else if (iResult == 0) cout << "Connetcion closed\n";
-		else cout << "Recive faild with error: " << WSAGetLastError() << endl;
-	} while (iResult > 0);
+		//6) Ожидаем ответ от сервера 
+		CHAR recv_buffer[BUFFER_LENGHT] = {};
+		/*do*/
+		{
+			iResult = recv(connect_scoket, recv_buffer, BUFFER_LENGHT, 0);
+			if (iResult > 0)cout << iResult << "Bytes recived, Message:\t" << recv_buffer << ".\n";
+			else if (iResult == 0) cout << "Connetcion closed\n";
+			else cout << "Recive faild with error: " << WSAGetLastError() << endl;
+		} /*while (iResult > 0);*/
+		
+		ZeroMemory(send_buffer, BUFFER_LENGHT);
+		cout << "Type some text: ";
+		SetConsoleCP(1251);
+		cin.getline(send_buffer, BUFFER_LENGHT);
+		SetConsoleCP(866);
+	} while (strstr(send_buffer, "exit") == 0 && strstr(send_buffer, "quit") == 0);
+	//} while (strcmp(send_buffer, "exit") != 0 && strcmp(send_buffer, "quit") != 0);
+
 	//7) Отключение от сервера
 	iResult = shutdown(connect_scoket, SD_SEND);
 	if (iResult == SOCKET_ERROR)

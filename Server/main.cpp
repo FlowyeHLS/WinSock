@@ -88,6 +88,7 @@ int main()
 	}
 
 	//6) Обработка запросов от клиентов 
+	cout << "Accept client connections....";
 	SOCKET client_socket = accept(listen_socket, NULL, NULL);
 	if (client_socket == INVALID_SOCKET)
 	{
@@ -100,16 +101,16 @@ int main()
 	}
 
 	//7) Получение запросов от клиентов 
-	CHAR send_buffer[BUFFER_LENGT] = "Привет клиент";
-	CHAR recv_buffer[BUFFER_LENGT] = {};
-	INT iSendResult = 0;
 	do
 	{
+		CHAR send_buffer[BUFFER_LENGT] = "Привет клиент";
+		CHAR recv_buffer[BUFFER_LENGT] = {};
+		INT iSendResult = 0;
 		iResult = recv(client_socket, recv_buffer, BUFFER_LENGT, 0);
 		if (iResult > 0)
 		{
 			cout << "Bytes received: " << recv_buffer << endl;
-			iSendResult = send(client_socket, send_buffer, sizeof(send_buffer), 0);
+			iSendResult = send(client_socket, recv_buffer, strlen(recv_buffer), 0);
 			if (iSendResult == SOCKET_ERROR)
 			{
 				dwLastError = WSAGetLastError();
@@ -129,7 +130,7 @@ int main()
 	closesocket(listen_socket);
 	freeaddrinfo(result);
 	WSACleanup();
-	
-	
+
+
 	return dwLastError;
 }
