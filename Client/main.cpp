@@ -8,6 +8,7 @@
 #include <ws2tcpip.h>
 #include <iphlpapi.h>
 #include <iostream>
+#include <string>
 using namespace std;
 
 #pragma comment(lib,"WS2_32.lib")
@@ -75,16 +76,20 @@ int main()
 	}
 
 	//5) Отправляем данные на сервер 
-	CHAR send_buffer[BUFFER_LENGHT] = "Hello Server, I am client";
-	iResult = send(connect_scoket, send_buffer, strlen(send_buffer), 0);
-	if (iResult == SOCKET_ERROR)
+	while (true)
 	{
-		dwLastError = WSAGetLastError();
-		cout << "Send failed with error: " << dwLastError;
-		closesocket(connect_scoket);
-		freeaddrinfo(result);
-		WSACleanup();
-		return dwLastError;
+		cout << "Напишите текст или ехит для выхода: ";
+		string input;
+		getline(cin, input);
+		if (input == "exit")
+			break;
+
+		iResult = send(connect_scoket, input.c_str(), input.length(), 0);
+		if (iResult == SOCKET_ERROR)
+		{
+			cout << "Send failed with error: " << WSAGetLastError() << endl;
+			break;
+		}
 	}
 	cout << iResult << "Bytes sent" << endl;
 
