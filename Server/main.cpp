@@ -16,6 +16,7 @@ using namespace std;
 #define BUFFER_LENGT		1460
 #define MAX_CLIENTS			3
 #define g_sz_SORRY			"Error: Количество подключений превышено"
+#define IP_STR_MAX_LENGTH	16
 
 INT n = 0;//Kolovo akctive klient 
 SOCKET clietn_sockets[MAX_CLIENTS] = {};
@@ -133,6 +134,8 @@ int main()
 		}
 	} while (true);
 
+	WaitForMultipleObjects(MAX_CLIENTS, hThreads, TRUE, INFINITE);
+
 	//7) Получение запросов от клиентов 
 
 	closesocket(listen_socket);
@@ -143,21 +146,52 @@ int main()
 	return dwLastError;
 }
 
+INT GetSlotIndex(DWORD dwID)
+{
+	for (int i = 0; i < MAX_CLIENTS; i++)
+	{
+		if (threadIDs[i] == dwID)return i;
+	}
+}
+
+VOID Shift(INT start)
+{
+	for (INT i = start; i < MAX_CLIENTS; i++)
+	{
+		clietn_sockets[i] = clietn_sockets[i + 1];
+		threadIDs[i] = threadIDs[i + 1];
+		hThreads[i] = hThreads[i + 1];
+	}
+	clietn_sockets[MAX_CLIENTS - 1] = NULL;
+	threadIDs[MAX_CLIENTS - 1] = NULL;
+	hThreads[MAX_CLIENTS - 1] = NULL;
+	n--;
+}
+
 /*DWORD WINAPI*/VOID WINAPI HandleClient(SOCKET client_socket)
 {
+	SOCKADDR_IN peer;
+	CHAR address[IP_STR_MAX_LENGTH] = {};
+	INT address_length = IP_STR_MAX_LENGTH;
+	getpeername(client_socket, (SOCKADDR*)&peer, &address_length);
+	inet_ntop(AF_INET, &peer.sin_addr, address, address_length);
+	INT port = ((peer.sin_port & 0xFF) << 8) + (peer.sin_port >> 8);
+	cout << address << ":" << port << endl;
+	////////////////////////////////////////////////////////////////////////////
 	INT iResult = 0;
 	DWORD dwLastError = 0;
 	/*SOCKET client_socket = *(SOCKET*)clients_socket;*/
-	do
-	{
 		CHAR send_buffer[BUFFER_LENGT] = "Привет клиент";
 		CHAR recv_buffer[BUFFER_LENGT] = {};
+	do
+	{
 		INT iSendResult = 0;
-
+		ZeroMemory(send_buffer, BUFFER_LENGT);
+		ZeroMemory(recv_buffer, BUFFER_LENGT);
 		iResult = recv(client_socket, recv_buffer, BUFFER_LENGT, 0);
 		if (iResult > 0)
 		{
-			cout << "Bytes received: " << recv_buffer << endl;
+			cout << "Bytes received " << address << ":"<<port << "-" << recv_buffer << endl;
 			iSendResult = send(client_socket, recv_buffer, strlen(recv_buffer), 0);
 			if (iSendResult == SOCKET_ERROR)
 			{
@@ -173,7 +207,11 @@ int main()
 			dwLastError = WSAGetLastError();
 			cout << "Recive failed with error: " << dwLastError << endl;
 		}
-	} while (iResult > 0);
+	} while (iResult > 0 && !strstr(recv_buffer,"quit"));
+	DWORD dwID = GetCurrentThreadId();
+	Shift(GetSlotIndex(dwID));
+	cout << address << ":" << port << "leaved" << endl;
+	ExitThread(0);
 	closesocket(client_socket);
 	/*return 0;*/
 }

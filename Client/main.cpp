@@ -110,6 +110,7 @@ int main()
 	//} while (strcmp(send_buffer, "exit") != 0 && strcmp(send_buffer, "quit") != 0);
 
 	//7) Отключение от сервера
+	send(connect_scoket, "quit", 4, 0);
 	iResult = shutdown(connect_scoket, SD_SEND);
 	if (iResult == SOCKET_ERROR)
 	{
