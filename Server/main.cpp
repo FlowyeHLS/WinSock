@@ -14,6 +14,16 @@ using namespace std;
 
 #define DEFAULT_PORT		"27015"
 #define BUFFER_LENGT		1460
+#define MAX_CLIENTS			3
+#define g_sz_SORRY			"Error: Количество подключений превышено"
+
+INT n = 0;//Kolovo akctive klient 
+SOCKET clietn_sockets[MAX_CLIENTS] = {};
+DWORD threadIDs[MAX_CLIENTS] = {};
+HANDLE hThreads[MAX_CLIENTS] = {};
+
+VOID WINAPI HandleClient(SOCKET client_socket);
+
 
 int main()
 {
@@ -88,24 +98,62 @@ int main()
 	}
 
 	//6) Обработка запросов от клиентов 
+	
 	cout << "Accept client connections....";
-	SOCKET client_socket = accept(listen_socket, NULL, NULL);
-	if (client_socket == INVALID_SOCKET)
+	do
 	{
-		dwLastError = WSAGetLastError();
-		cout << "Accept failed: " << dwLastError << endl;
-		closesocket(listen_socket);
-		freeaddrinfo(result);
-		WSACleanup();
-		return dwLastError;
-	}
+		SOCKET client_socket = accept(listen_socket, NULL, NULL);
+		/*if (clietn_sockets[n] == INVALID_SOCKET)
+		{
+			dwLastError = WSAGetLastError();
+			cout << "Accept failed: " << dwLastError << endl;
+			closesocket(listen_socket);
+			freeaddrinfo(result);
+			WSACleanup();
+			return dwLastError;
+		}*/
+			//HandleClient(clietn_socket);
+		if (n<MAX_CLIENTS)
+		{
+			clietn_sockets[n] = client_socket;
+			hThreads[n] = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)HandleClient, (LPVOID)clietn_sockets[n], 0, threadIDs + n);
+			n++;
+		}
+		else
+		{
+			CHAR recv_buffer[BUFFER_LENGT] = {};
+			INT iResult = recv(client_socket, recv_buffer, BUFFER_LENGT, 0);
+			if (iResult > 0)
+			{
+				cout << "Bytes received: " << iResult << endl;
+				cout << "Message: " << recv_buffer << endl;
+				INT iSendResult = send(client_socket, g_sz_SORRY, strlen(g_sz_SORRY), 0);
+				closesocket(client_socket);
+			}
+		}
+	} while (true);
 
 	//7) Получение запросов от клиентов 
+
+	closesocket(listen_socket);
+	freeaddrinfo(result);
+	WSACleanup();
+
+
+	return dwLastError;
+}
+
+/*DWORD WINAPI*/VOID WINAPI HandleClient(SOCKET client_socket)
+{
+	INT iResult = 0;
+	DWORD dwLastError = 0;
+	/*SOCKET client_socket = *(SOCKET*)clients_socket;*/
 	do
 	{
 		CHAR send_buffer[BUFFER_LENGT] = "Привет клиент";
 		CHAR recv_buffer[BUFFER_LENGT] = {};
 		INT iSendResult = 0;
+
 		iResult = recv(client_socket, recv_buffer, BUFFER_LENGT, 0);
 		if (iResult > 0)
 		{
@@ -127,10 +175,5 @@ int main()
 		}
 	} while (iResult > 0);
 	closesocket(client_socket);
-	closesocket(listen_socket);
-	freeaddrinfo(result);
-	WSACleanup();
-
-
-	return dwLastError;
+	/*return 0;*/
 }
