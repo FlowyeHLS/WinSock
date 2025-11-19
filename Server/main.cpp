@@ -25,6 +25,12 @@ HANDLE hThreads[MAX_CLIENTS] = {};
 
 VOID WINAPI HandleClient(SOCKET client_socket);
 
+void PrintSlots()
+{
+	cout << "Active: " << n
+		<< " | svobodnie: " << (MAX_CLIENTS - n) << endl;
+}
+
 
 int main()
 {
@@ -103,6 +109,8 @@ int main()
 	cout << "Accept client connections....";
 	do
 	{
+		
+
 		SOCKET client_socket = accept(listen_socket, NULL, NULL);
 		/*if (clietn_sockets[n] == INVALID_SOCKET)
 		{
@@ -114,12 +122,15 @@ int main()
 			return dwLastError;
 		}*/
 			//HandleClient(clietn_socket);
-		if (n<MAX_CLIENTS)
+
+		if (n < MAX_CLIENTS)
 		{
 			clietn_sockets[n] = client_socket;
-			hThreads[n] = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)HandleClient, (LPVOID)clietn_sockets[n], 0, threadIDs + n);
+			hThreads[n] = CreateThread(NULL,0,(LPTHREAD_START_ROUTINE)HandleClient,	(LPVOID)clietn_sockets[n],0,threadIDs + n);
 			n++;
+			PrintSlots();
 		}
+
 		else
 		{
 			CHAR recv_buffer[BUFFER_LENGT] = {};
@@ -210,6 +221,7 @@ VOID Shift(INT start)
 	} while (iResult > 0 && !strstr(recv_buffer,"quit"));
 	DWORD dwID = GetCurrentThreadId();
 	Shift(GetSlotIndex(dwID));
+	PrintSlots();
 	cout << address << ":" << port << "leaved" << endl;
 	ExitThread(0);
 	closesocket(client_socket);
