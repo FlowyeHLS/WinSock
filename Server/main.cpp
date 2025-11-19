@@ -1,3 +1,4 @@
+#define _CRT_SECURE_NO_WARNINGS
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
 #endif // !WIN32_LEAN_AND_MEAN
@@ -152,6 +153,7 @@ INT GetSlotIndex(DWORD dwID)
 	{
 		if (threadIDs[i] == dwID)return i;
 	}
+	return -1;
 }
 
 VOID Shift(INT start)
@@ -168,7 +170,19 @@ VOID Shift(INT start)
 	n--;
 }
 
-/*DWORD WINAPI*/VOID WINAPI HandleClient(SOCKET client_socket)
+VOID BroadCast(CONST CHAR message[], SOCKET source)
+{
+	for (int i = 0; i < n; i++)
+	{
+		if (clietn_sockets[i] != source)
+		{
+			INT iResult = send(clietn_sockets[i], message, strlen(message), 0);
+		}
+	}
+}
+
+/*DWORD WINAPI*/
+VOID WINAPI HandleClient(SOCKET client_socket)
 {
 	SOCKADDR_IN peer;
 	CHAR address[IP_STR_MAX_LENGTH] = {};
@@ -192,6 +206,8 @@ VOID Shift(INT start)
 		if (iResult > 0)
 		{
 			cout << "Bytes received " << address << ":"<<port << "-" << recv_buffer << endl;
+			sprintf(send_buffer, "%i Bytes recived from %s:%i - %s\n", iResult, address, port, recv_buffer);
+			BroadCast(send_buffer, client_socket);
 			iSendResult = send(client_socket, recv_buffer, strlen(recv_buffer), 0);
 			if (iSendResult == SOCKET_ERROR)
 			{
