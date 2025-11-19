@@ -15,6 +15,8 @@ using namespace std;
 #define DEFAULT_PORT		"27015"
 #define BUFFER_LENGHT		1460
 
+VOID Receive(SOCKET connect_scoket);
+
 int main()
 {
 	setlocale(LC_ALL, "RU");
@@ -73,12 +75,20 @@ int main()
 		WSACleanup();
 		return dwLastError;
 	}
+	DWORD dwThreadID = 0;
+	HANDLE hRecvThread = CreateThread(NULL, 0, (LPTHREAD_START_ROUTINE)Receive, (LPVOID)connect_scoket, 0, &dwThreadID);
 
 	//5) Отправляем данные на сервер 
 	
 	CHAR send_buffer[BUFFER_LENGHT] = "Hello Server, I am client";
 	do 
 	{
+		ZeroMemory(send_buffer, BUFFER_LENGHT);
+		cout << "Type some text: ";
+		SetConsoleCP(1251);
+		cin.getline(send_buffer, BUFFER_LENGHT);
+		SetConsoleCP(866);
+
 		iResult = send(connect_scoket, send_buffer, strlen(send_buffer), 0);
 		if (iResult == SOCKET_ERROR)
 		{
@@ -90,25 +100,18 @@ int main()
 			return dwLastError;
 		}
 		cout << iResult << "Bytes sent" << endl;
-
+		////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 		//6) Ожидаем ответ от сервера 
-		CHAR recv_buffer[BUFFER_LENGHT] = {};
-		/*do*/
-		{
-			iResult = recv(connect_scoket, recv_buffer, BUFFER_LENGHT, 0);
-			if (iResult > 0)cout << iResult << "Bytes recived, Message:\t" << recv_buffer << ".\n";
-			else if (iResult == 0) cout << "Connetcion closed\n";
-			else cout << "Recive faild with error: " << WSAGetLastError() << endl;
-		} /*while (iResult > 0);*/
-		
-		ZeroMemory(send_buffer, BUFFER_LENGHT);
+		//Receive(connect_scoket);
+		////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+		/*ZeroMemory(send_buffer, BUFFER_LENGHT);
 		cout << "Type some text: ";
 		SetConsoleCP(1251);
 		cin.getline(send_buffer, BUFFER_LENGHT);
-		SetConsoleCP(866);
+		SetConsoleCP(866);*/
 	} while (strstr(send_buffer, "exit") == 0 && strstr(send_buffer, "quit") == 0);
 	//} while (strcmp(send_buffer, "exit") != 0 && strcmp(send_buffer, "quit") != 0);
-
+	CloseHandle(hRecvThread);
 	//7) Отключение от сервера
 	send(connect_scoket, "quit", 4, 0);
 	iResult = shutdown(connect_scoket, SD_SEND);
@@ -122,4 +125,16 @@ int main()
 	WSACleanup();
 
 	return dwLastError;
+}
+VOID Receive(SOCKET connect_scoket)
+{
+	INT iResult = 0;
+	CHAR recv_buffer[BUFFER_LENGHT] = {};
+	do
+	{
+		iResult = recv(connect_scoket, recv_buffer, BUFFER_LENGHT, 0);
+		if (iResult > 0)cout << iResult << "Bytes recived, Message:\t" << recv_buffer << ".\n";
+		else if (iResult == 0) cout << "Connetcion closed\n";
+		else cout << "Recive faild with error: " << WSAGetLastError() << endl;
+	} while (iResult > 0);
 }
