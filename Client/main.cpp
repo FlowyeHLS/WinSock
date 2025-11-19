@@ -15,6 +15,9 @@ using namespace std;
 #define DEFAULT_PORT		"27015"
 #define BUFFER_LENGHT		1460
 
+SHORT y_position = 1;
+
+VOID InputMessage(CHAR send_buffer[]);
 VOID Receive(SOCKET connect_scoket);
 
 int main()
@@ -83,11 +86,8 @@ int main()
 	CHAR send_buffer[BUFFER_LENGHT] = "Hello Server, I am client";
 	do 
 	{
-		ZeroMemory(send_buffer, BUFFER_LENGHT);
-		cout << "Type some text: ";
-		SetConsoleCP(1251);
-		cin.getline(send_buffer, BUFFER_LENGHT);
-		SetConsoleCP(866);
+		InputMessage(send_buffer);
+		////////////////////////////////////////////////
 
 		iResult = send(connect_scoket, send_buffer, strlen(send_buffer), 0);
 		if (iResult == SOCKET_ERROR)
@@ -126,14 +126,45 @@ int main()
 
 	return dwLastError;
 }
+
+VOID InputMessage(CHAR send_buffer[])
+{
+	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+	CONSOLE_SCREEN_BUFFER_INFO csbi = {};
+	BOOL ok = GetConsoleScreenBufferInfo(hConsole,&csbi);
+	COORD position{0,25};
+	SetConsoleCursorPosition(hConsole, position);
+
+	/////////////////////////////////////////////////////
+	
+	ZeroMemory(send_buffer, BUFFER_LENGHT);
+	cout << "Type some text: ";
+	SetConsoleCP(1251);
+	cin.getline(send_buffer, BUFFER_LENGHT);
+	SetConsoleCP(866);
+	
+	//SetConsoleCursorPosition(hConsole, { 0,20 });
+	//CloseHandle(hConsole);
+}
+
+VOID PrintMessage(CHAR recv_buffer[],INT iResult)
+{
+	HANDLE hConsole = GetStdHandle(STD_OUTPUT_HANDLE);
+	SetConsoleCursorPosition(hConsole, { 0,y_position });
+	cout << y_position++ << " " << iResult << "Bytes recived, Message:\t" << recv_buffer << ".\n";
+	SetConsoleCursorPosition(hConsole, { 18,25 });
+	//CloseHandle(hConsole);
+}
+
 VOID Receive(SOCKET connect_scoket)
 {
 	INT iResult = 0;
 	CHAR recv_buffer[BUFFER_LENGHT] = {};
 	do
 	{
+		ZeroMemory(recv_buffer, BUFFER_LENGHT);
 		iResult = recv(connect_scoket, recv_buffer, BUFFER_LENGHT, 0);
-		if (iResult > 0)cout << iResult << "Bytes recived, Message:\t" << recv_buffer << ".\n";
+		if (iResult > 0)PrintMessage(recv_buffer,iResult);//cout << x_position++<< iResult << "Bytes recived, Message:\t" << recv_buffer << ".\n";
 		else if (iResult == 0) cout << "Connetcion closed\n";
 		else cout << "Recive faild with error: " << WSAGetLastError() << endl;
 	} while (iResult > 0);
